@@ -1,9 +1,9 @@
-from rest_framework import viewsets, permissions, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
+from rest_framework import viewsets, permissions
+from rest_framework.exceptions import ValidationError  # ИСПРАВЛЕНО: правильный импорт для ошибки
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Advertisement
 from .serializers import AdvertisementSerializer
+from .filters import AdvertisementFilter  # Добавлено для фильтрации по дате
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
@@ -15,7 +15,7 @@ class AdvertisementViewSet(viewsets.ModelViewSet):
     queryset = Advertisement.objects.all()
     serializer_class = AdvertisementSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['status']
+    filterset_class = AdvertisementFilter  # ИСПРАВЛЕНО: вместо filterset_fields
     
     def get_permissions(self):
         if self.action == 'create':
@@ -34,8 +34,6 @@ class AdvertisementViewSet(viewsets.ModelViewSet):
         ).count()
         
         if open_ads >= 10:
-            raise serializers.ValidationError(
-                "У вас не может быть больше 10 открытых объявлений"
-            )
+            raise ValidationError("У вас не может быть больше 10 открытых объявлений")  # ИСПРАВЛЕНО
         
         serializer.save(creator=self.request.user)
